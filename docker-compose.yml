@@ -1,0 +1,71 @@
+version: '3'
+
+services:
+  redis:
+    container_name: redis
+    image: redis:6.2.5-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./docker/redis/data:/data
+
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    restart: always
+    depends_on:
+      - redis
+
+  clickhouse:
+    container_name: clickhouse
+    image: yandex/clickhouse-server:21.7-alpine
+    restart: always
+    ports:
+      - 9000:9000
+      - 8123:8123
+    volumes:
+      - ./docker/clickhouse/lib:/var/lib/clickhouse
+      - ./docker/clickhouse/logs:/var/log/clickhouse-server/
+      - ./docker/clickhouse/init.sql:/docker-entrypoint-initdb.d/
+      - ./docker/clickhouse/data/config.d:/etc/clickhouse-server/config.d/*.xml
+      - ./docker/clickhouse/data/usert.d:/etc/clickhouse-server/usert.d/*.xml
+
+  clickhouse-web-client:
+    container_name: clickhouse-web-client
+    image: spoonest/clickhouse-web-client
+    restart: always
+    ports:
+      - 8082:80
+    depends_on:
+      - clickhouse
+    environment:
+      USER: myuser
+      PASSWORD: mypass
+      CH_NAME: test
+      CH_HOST: clickhouse
+      CH_LOGIN: myuser
+      CH_PASSWORD: mypass
+  
+  app:
+    container_name: server
+    build: ./app
+    restart: always
+    command: npm run start
+    ports:
+      - '${HTTP_PORT}:${HTTP_PORT}'
+    depends_on:
+      - redis
+      - clickhouse
+    environment:
+      PORT: ${HTTP_PORT}
+      REDIS_HOST: redis
+      CLICKHOUSE_HOST: clickhouse
+      
+  
