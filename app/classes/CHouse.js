@@ -23,15 +23,17 @@ class CHouse {
             }
         };
 
+        this.clickhouse = new ClickHouse(this.options)
+
         return this;
     }
 
     async insertData(table, data = []) {
-        const r = await this.clickhouse.query(`CREATE TABLE IF NOT EXISTS ${table} (json String) ENGINE = MergeTree() ORDER BY json`).toPromise();
+
+        const r = await this.clickhouse.query(`CREATE TABLE IF NOT EXISTS redis_${table} (json String) ENGINE = MergeTree() ORDER BY json`).toPromise();
         console.log(r);
 
-
-        const ws = this.clickhouse.insert(`INSERT INTO ${table}(json)`).stream();
+        const ws = this.clickhouse.insert(`INSERT INTO redis_${table}(json)`).stream();
         for (const row of data) {
             await ws.writeRow(
                 [JSON.stringify(row)]
@@ -42,21 +44,25 @@ class CHouse {
     }
 
     async getData(table) {
-        const result = await this.clickhouse.query(`SELECT * FROM ${table};`).toPromise();
+        const result = await this.clickhouse.query(`SELECT * FROM redis_${table};`).toPromise();
         return result
     }
 
     async dropTable(table) {
-        const result = await this.clickhouse.query(`drop table ${table};`).toPromise();
+        const result = await this.clickhouse.query(`drop table redis_${table};`).toPromise();
         return result
     }
 
     connect() {
         return new Promise((res, rej) => {
-            this.clickhouse = new ClickHouse(this.options)
+            
             const check = this.clickhouse.query(`SELECT now()`).toPromise();
 
-            check.then(result => res(result))
+            check
+                .then(result => {
+                    console.log("Connect to clickhouse succesful")
+                    res(result)
+                })
                 .catch(e => rej(e))
         })
     }

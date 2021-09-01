@@ -1,5 +1,5 @@
 const CHouse = require("./classes/CHouse")()
-
+const redis = require("./classes/CRedis")().redis
 const bodyParser = require("./middleware/bodyparser")
 
 
@@ -10,21 +10,39 @@ module.exports = async (req, res) => {
 
   // 
   const { url, method, body } = req;
-  console.log({ url, method, body })
+  console.log({ body })
 
 
   switch (method) {
     case "POST":
 
-      const r = await CHouse.insertData(body.table, body.data)      
-      console.log(r);
+      const { table, max_buffer, max_time, data} = body
+      
+      let table_data = await redis.get(table)
+      table_data = table_data == null ? [] : JSON.parse(table_data)      
+      table_data = [...table_data, ...data]
+      
 
-      const r2 = await CHouse.getData(body.table)
-      console.log(r2);
+
+      let table_limits = await redis.get("_tables_stats")
+      table_limits = table_limits == null ? {} : JSON.parse(table_limits)
+      table_limits[table] = {
+        max_buffer, max_time,
+        buffer: Buffer.from(JSON.stringify(table_data)).length,
+        time: max_time
+      }
+
+      // const r = await CHouse.insertData(body.table, body.data)      
+      // console.log(r);
+      // console.log(table_limits);
+      // console.log(table_data)
+
+      // const r2 = await CHouse.getData(body.table)
+      redis.set("_tables_stats", JSON.stringify(table_limits))
+      redis.set(table, JSON.stringify(table_data))
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.write(JSON.stringify(r2));
-      // res.write(JSON.stringify(payload));
+      res.write(JSON.stringify(data));
       res.end();
       break;
 
