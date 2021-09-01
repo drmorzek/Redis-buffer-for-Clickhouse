@@ -1,27 +1,6 @@
-const { ClickHouse } = require('clickhouse');
-const { CLICKHOUSE } = require("./config/keys")
+const CHouse = require("./classes/CHouse")()
 
 const bodyParser = require("./middleware/bodyparser")
-
-const clickhouse = new ClickHouse({
-  host: CLICKHOUSE.HOST,
-  debug: false,
-  basicAuth: null,
-  isUseGzip: false,
-  format: "json",
-  raw: false,
-  config: {
-    database: CLICKHOUSE.DB,
-  }
-})
-
-
-
-const queries = [
-
-  "CREATE TABLE IF NOT EXISTS json_as_string (json String) ENGINE = MergeTree() ORDER BY json",
-
-];
 
 
 module.exports = async (req, res) => {
@@ -33,28 +12,14 @@ module.exports = async (req, res) => {
   const { url, method, body } = req;
   console.log({ url, method, body })
 
-  //
-
-
-
 
   switch (method) {
     case "POST":
 
-      const r = await clickhouse.query(`CREATE TABLE IF NOT EXISTS ${body.table} (json String) ENGINE = MergeTree() ORDER BY json`).toPromise();
+      const r = await CHouse.insertData(body.table, body.data)      
       console.log(r);
 
-
-      const ws = clickhouse.insert(`INSERT INTO ${body.table}(json)`).stream();
-      for (const row of body.data) {
-        await ws.writeRow(
-          [JSON.stringify(row)]
-        );
-      }
-      const result = await ws.exec();
-      console.log(result);
-
-      const r2 = await clickhouse.query(`SELECT * FROM ${body.table};`).toPromise();
+      const r2 = await CHouse.getData(body.table)
       console.log(r2);
 
       res.writeHead(200, { "Content-Type": "application/json" });
