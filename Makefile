@@ -9,10 +9,10 @@ dev:
 	
 
 stop:
-	docker-compose down --rmi all
+	docker-compose down 
 
-down:
-	docker-compose down
+stop-delete:
+	docker-compose down --rmi all
 
 delete:
 	docker image prune -a -f

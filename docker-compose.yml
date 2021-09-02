@@ -6,7 +6,7 @@ services:
     image: redis:6.2.5-alpine
     restart: always
     ports:
-      - '6379:6379'
+      - "${REDIS_PORT}:6379"
     volumes:
       - ./docker/redis/data:/data
 
@@ -18,7 +18,7 @@ services:
     environment:
       - REDIS_HOSTS=local:redis:6379
     ports:
-      - "8081:8081"
+      - "${REDIS_COMMANDER_PORT}:8081"
     restart: always
     depends_on:
       - redis
@@ -29,11 +29,11 @@ services:
     restart: always
     ports:
       - 9000:9000
-      - 8123:8123
+      - ${CLICKHOUSE_PORT}:8123
     volumes:
       - ./docker/clickhouse/lib:/var/lib/clickhouse
       - ./docker/clickhouse/logs:/var/log/clickhouse-server/
-      - ./docker/clickhouse/init.sql:/docker-entrypoint-initdb.d/
+      - ./docker/clickhouse/initdb.d:/docker-entrypoint-initdb.d/
       - ./docker/clickhouse/data/config.d:/etc/clickhouse-server/config.d/*.xml
       - ./docker/clickhouse/data/usert.d:/etc/clickhouse-server/usert.d/*.xml
 
@@ -41,7 +41,7 @@ services:
     container_name: lighthouse
     build: ./lighthouse
     ports:
-      - "8082:80"
+      - "${LIGHTHOUSE_PORT}:80"
     environment:
       - NGINX_PORT=80
     depends_on:
@@ -60,6 +60,8 @@ services:
     environment:
       PORT: ${HTTP_PORT}
       REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
       CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
       
   

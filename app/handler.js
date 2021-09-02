@@ -15,15 +15,15 @@ module.exports = async (req, res) => {
 
   switch (method) {
     case "POST":
+      const need_fields = ["table", "data", "max_buffer", "max_time"]
+        .filter(item => Object.keys(body).indexOf(item) < 0)
 
-      Object.keys(body).forEach(key => {
-        if (!key) {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.write(JSON.stringify({ error: `JSON is incorrect. Key ${key} required` }));
-          res.end();
-        }
-      })
-
+      if (need_fields.length !== 0) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.write(JSON.stringify({ error: `JSON is incorrect. Key ${need_fields.join(",")} required` }));
+        res.end();
+        return
+      }
 
       await CacheService.cacheData(body)
 

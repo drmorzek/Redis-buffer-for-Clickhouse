@@ -1,5 +1,6 @@
 const Redis = require("ioredis");
 
+const { REDIS } = require("../config/keys")
 
 class CRedis {
 
@@ -10,7 +11,8 @@ class CRedis {
         CRedis.instance = this;
 
         this.options = {
-            host: "redis"
+            host: REDIS.HOST,
+            port: parseInt(REDIS.PORT)
         };
         this.redis = new Redis(this.options)
 
