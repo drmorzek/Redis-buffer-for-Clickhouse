@@ -1,6 +1,7 @@
-const CHouse = require("./classes/CHouse")()
-const redis = require("./classes/CRedis")().redis
+const CacheService = require("./servises/cacheService")
+
 const bodyParser = require("./middleware/bodyparser")
+
 
 
 module.exports = async (req, res) => {
@@ -9,40 +10,25 @@ module.exports = async (req, res) => {
   await bodyParser(req)
 
   // 
-  const { url, method, body } = req;
-  console.log({ body })
+  const { method, body } = req;
 
 
   switch (method) {
     case "POST":
 
-      const { table, max_buffer, max_time, data} = body
-      
-      let table_data = await redis.get(table)
-      table_data = table_data == null ? [] : JSON.parse(table_data)      
-      table_data = [...table_data, ...data]
-      
+      Object.keys(body).forEach(key => {
+        if (!key) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.write(JSON.stringify({ error: `JSON is incorrect. Key ${key} required` }));
+          res.end();
+        }
+      })
 
 
-      let table_limits = await redis.get("_tables_stats")
-      table_limits = table_limits == null ? {} : JSON.parse(table_limits)
-      table_limits[table] = {
-        max_buffer, max_time,
-        buffer: Buffer.from(JSON.stringify(table_data)).length,
-        time: max_time
-      }
-
-      // const r = await CHouse.insertData(body.table, body.data)      
-      // console.log(r);
-      // console.log(table_limits);
-      // console.log(table_data)
-
-      // const r2 = await CHouse.getData(body.table)
-      redis.set("_tables_stats", JSON.stringify(table_limits))
-      redis.set(table, JSON.stringify(table_data))
+      await CacheService.cacheData(body)
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.write(JSON.stringify(data));
+      res.write(JSON.stringify(body.data));
       res.end();
       break;
 
