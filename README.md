@@ -88,11 +88,10 @@ CLICKHOUSE_DB - наименование БД в ClickHouse
 По деволту наименование БД в ClickHouse называется default.
 Чтоб в ClickHouse создалась новая база данных необходимо в папке ./docker/clickhouse/initdb.d создать вайл init-db.sh со следующим содержимым
 __________________________________________________
-#!/bin/bash
-set -e
-
-clickhouse client -n <<-EOSQL
-    CREATE DATABASE <название новой базы данных>;
+#!/bin/bash  
+set -e  
+clickhouse client -n <<-EOSQL  
+    CREATE DATABASE <название новой базы данных>;  
 EOSQL
 __________________________________________________
 
